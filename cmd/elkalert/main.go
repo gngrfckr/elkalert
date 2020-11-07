@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -37,29 +36,6 @@ type Rule struct {
 
 func init() {
 	flag.StringVar(&confPath, "config-path", "configs/config.toml", "path to config file")
-}
-
-func constructQuery(q string, size int) *strings.Reader {
-	var query = `{"query": {`
-	query = query + q
-	query = query + `}, "size": ` + strconv.Itoa(size) + `}`
-	fmt.Println("\nquery:", query)
-
-	isValid := json.Valid([]byte(query)) // returns bool
-
-	if isValid == false {
-		fmt.Println("constructQuery() ERROR: query string not valid:", query)
-		fmt.Println("Using default match_all query")
-		query = "{}"
-	} else {
-		fmt.Println("constructQuery() valid JSON:", isValid)
-	}
-	var b strings.Builder
-	b.WriteString(query)
-
-	read := strings.NewReader(b.String())
-
-	return read
 }
 
 func readRulesFile(path string) Rules {
@@ -136,14 +112,12 @@ func main() {
 		if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 			log.Fatalf("Error parsing the response body: %s", err)
 		}
-		// Print the response status, number of results, and request duration.
 		log.Printf(
 			"[%s] %d hits; took: %dms",
 			res.Status(),
 			int(r["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
 			int(r["took"].(float64)),
 		)
-		// Print the ID and document source for each hit.
 		for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
 			log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
 		}
