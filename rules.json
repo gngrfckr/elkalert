@@ -1,0 +1,13 @@
+{
+    "rules":
+        [
+            {
+                "name":"WARN level alert",
+                "index":"ewp-log-apps-*",
+                "query":{
+                    "match": {"level": "ERROR"}
+                },
+                "interval":"2m"
+            }
+        ]
+}
