@@ -1,1 +1,1 @@
-elastic_connection_string : "qa00knode01.ewp:32092"
+rules_path = "rules.json"
