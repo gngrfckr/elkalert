@@ -2,12 +2,56 @@
     "rules":
         [
             {
-                "name":"WARN level alert",
+                "name":"ERROR level alert",
                 "index":"ewp-log-apps-*",
                 "query":{
-                    "match": {"level": "ERROR"}
+                    "bool": {
+                        "must": [
+                          {
+                            "match": {
+                              "level": "ERROR"
+                            }
+                          },
+                          {
+                            "range": {
+                              "@timestamp": {
+                                "gte": "now-2m",
+                                "lte": "now"
+                              }
+                            }
+                          }
+                        ]
+                      }
                 },
-                "interval":"2m"
-            }
+                "interval":{
+                  "minutes": "1"
+                }
+            },
+            {
+              "name":"WARN level alert",
+              "index":"ewp-log-apps-*",
+              "query":{
+                  "bool": {
+                      "must": [
+                        {
+                          "match": {
+                            "level": "WARN"
+                          }
+                        },
+                        {
+                          "range": {
+                            "@timestamp": {
+                              "gte": "now-3m",
+                              "lte": "now"
+                            }
+                          }
+                        }
+                      ]
+                    }
+              },
+              "interval":{
+                "minutes": "3"
+              }
+          }
         ]
 }
