@@ -125,7 +125,7 @@ func SendAlert(Alert Alert, Hit map[string]interface{}) {
 	resolvedAlert := resolveTemplate(Alert, Hit)
 	if resolvedAlert.Destination.To == "telegram" {
 		telegram := Operation{TelegramSend{}}
-		go telegram.Send(resolvedAlert)
+		telegram.Send(resolvedAlert)
 	}
 
 }

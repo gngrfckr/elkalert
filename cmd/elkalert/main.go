@@ -8,7 +8,6 @@ import (
 
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -65,10 +64,6 @@ func readRulesFile(path string) Rules {
 	json.Unmarshal(byteValue, &rules)
 
 	return rules
-}
-
-func notify() {
-	fmt.Println("done")
 }
 
 func search(wg *sync.WaitGroup, rule Rule) {
