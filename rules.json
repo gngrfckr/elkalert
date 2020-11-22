@@ -2,20 +2,20 @@
     "rules":
         [
             {
-                "name":"ERROR level alert",
-                "index":"ewp-log-apps-*",
+                "name":"INFO level alert",
+                "index":"qa-ewp-log-apps-*",
                 "query":{
                     "bool": {
                         "must": [
                           {
                             "match": {
-                              "level": "ERROR"
+                              "level": "INFO"
                             }
                           },
                           {
                             "range": {
                               "@timestamp": {
-                                "gte": "now-2m",
+                                "gte": "now-1m",
                                 "lte": "now"
                               }
                             }
@@ -25,33 +25,16 @@
                 },
                 "interval":{
                   "minutes": "1"
+                },
+                "alert":{
+                  "template": "Message from elk-alert.\npod: {{_source.kubernetes.pod_name}}\ndate: {{_source.@timestamp}}\nmessage: {{_source.msg}}",
+                  "destination":{
+                    "to":"telegram",
+                    "chatid":"-369418875",
+                    "botid":"898968600:AAG1n2O_uE3SdpBhS1xxxB8kYibvs-bmwxE"
+                  }
                 }
-            },
-            {
-              "name":"WARN level alert",
-              "index":"ewp-log-apps-*",
-              "query":{
-                  "bool": {
-                      "must": [
-                        {
-                          "match": {
-                            "level": "WARN"
-                          }
-                        },
-                        {
-                          "range": {
-                            "@timestamp": {
-                              "gte": "now-3m",
-                              "lte": "now"
-                            }
-                          }
-                        }
-                      ]
-                    }
-              },
-              "interval":{
-                "minutes": "3"
-              }
-          }
+            }
         ]
 }
+

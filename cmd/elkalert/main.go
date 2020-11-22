@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	alert "elkalert/src/alert"
 	"elkalert/src/config"
+
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -36,6 +38,7 @@ type Rule struct {
 	Index    string `json:"index"`
 	Query    interface{}
 	Interval Interval
+	Alert    alert.Alert
 }
 
 //Interval ...
@@ -122,11 +125,9 @@ func search(wg *sync.WaitGroup, rule Rule) {
 		int(r["took"].(float64)),
 	)
 	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
+		alert.SendAlert(rule.Alert, hit.(map[string]interface{}))
 	}
-
 	log.Println(strings.Repeat("=", 37))
-
 }
 
 func searchJobStartWrapper(rule Rule) {
@@ -144,7 +145,7 @@ func main() {
 	}
 	rules := readRulesFile(conf.RulesPath)
 	for i := 0; i < len(rules.Rules); i++ {
-		ctab.MustAddJob("*/"+string(rules.Rules[i].Interval.Minutes)+" */"+string(rules.Rules[i].Interval.Hours)+" * * *", searchJobStartWrapper, rules.Rules[i])
+		ctab.MustAddJob("*/"+string(rules.Rules[i].Interval.Minutes)+" * * * *", searchJobStartWrapper, rules.Rules[i])
 	}
 	wg.Wait()
 	<-c
