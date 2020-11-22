@@ -5,6 +5,7 @@ import (
 	"context"
 	alert "elkalert/src/alert"
 	"elkalert/src/config"
+	"time"
 
 	"encoding/json"
 	"flag"
@@ -36,15 +37,15 @@ type Rule struct {
 	Name     string `json:"name"`
 	Index    string `json:"index"`
 	Query    interface{}
-	Interval Interval
+	Interval string
 	Alert    alert.Alert
 }
 
 //Interval ...
-type Interval struct {
-	Minutes string `json:"minutes"`
-	Hours   string `json:"hours"`
-}
+// type Interval struct {
+// 	Minutes string `json:"minutes"`
+// 	Hours   string `json:"hours"`
+// }
 
 func init() {
 	flag.StringVar(&confPath, "config-path", "configs/config.toml", "path to config file")
@@ -74,7 +75,7 @@ func search(wg *sync.WaitGroup, rule Rule) {
 	)
 
 	var buf bytes.Buffer
-
+	duration, _ := time.ParseDuration(rule.Interval) //scroll interval
 	log.Println("Rule Run: " + rule.Name)
 
 	query := map[string]interface{}{
@@ -90,6 +91,8 @@ func search(wg *sync.WaitGroup, rule Rule) {
 		es7.Search.WithBody(&buf),
 		es7.Search.WithTrackTotalHits(true),
 		es7.Search.WithPretty(),
+		es7.Search.WithScroll(duration),
+		es7.Search.WithSize(conf.RequestSize),
 	)
 	if err != nil {
 		log.Fatalf("Error getting response: %s", err)
@@ -127,7 +130,7 @@ func search(wg *sync.WaitGroup, rule Rule) {
 
 func searchJobStartWrapper(rule Rule) {
 	wg.Add(1)
-	search(&wg, rule)
+	go search(&wg, rule)
 }
 
 func main() {
@@ -140,7 +143,7 @@ func main() {
 	}
 	rules := readRulesFile(conf.RulesPath)
 	for i := 0; i < len(rules.Rules); i++ {
-		ctab.MustAddJob("*/"+string(rules.Rules[i].Interval.Minutes)+" * * * *", searchJobStartWrapper, rules.Rules[i])
+		ctab.MustAddJob("*/1 * * * *", searchJobStartWrapper, rules.Rules[i])
 	}
 	wg.Wait()
 	<-c

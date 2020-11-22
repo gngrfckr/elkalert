@@ -23,9 +23,7 @@
                         ]
                       }
                 },
-                "interval":{
-                  "minutes": "1"
-                },
+                "interval": "1m",
                 "alert":{
                   "template": "Message from elk-alert.\n<b>pod</b>: {{_source.kubernetes.pod_name}}\n<b>date</b>: {{_source.@timestamp}}\n<b>message</b>: {{_source.msg}}",
                   "destination":{

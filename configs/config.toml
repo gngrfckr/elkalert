@@ -1,1 +1,2 @@
 rules_path = "rules.json"
+es_request_size = 10000

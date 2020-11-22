@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Signature struct {
@@ -127,5 +128,5 @@ func SendAlert(Alert Alert, Hit map[string]interface{}) {
 		telegram := Operation{TelegramSend{}}
 		telegram.Send(resolvedAlert)
 	}
-
+	time.Sleep(1000 * time.Millisecond)
 }
