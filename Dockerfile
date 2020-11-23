@@ -3,4 +3,4 @@ RUN mkdir /app
 ADD . /app/ 
 WORKDIR /app 
 RUN make 
-CMD ["/app/gonotifier"]
+CMD ["/app/elkalert"]

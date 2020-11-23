@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	alert "elkalert/src/alert"
 	"elkalert/src/config"
+	"time"
+
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -35,14 +37,15 @@ type Rule struct {
 	Name     string `json:"name"`
 	Index    string `json:"index"`
 	Query    interface{}
-	Interval Interval
+	Interval string
+	Alert    alert.Alert
 }
 
 //Interval ...
-type Interval struct {
-	Minutes string `json:"minutes"`
-	Hours   string `json:"hours"`
-}
+// type Interval struct {
+// 	Minutes string `json:"minutes"`
+// 	Hours   string `json:"hours"`
+// }
 
 func init() {
 	flag.StringVar(&confPath, "config-path", "configs/config.toml", "path to config file")
@@ -64,10 +67,6 @@ func readRulesFile(path string) Rules {
 	return rules
 }
 
-func notify() {
-	fmt.Println("done")
-}
-
 func search(wg *sync.WaitGroup, rule Rule) {
 	defer wg.Done()
 	var (
@@ -76,7 +75,7 @@ func search(wg *sync.WaitGroup, rule Rule) {
 	)
 
 	var buf bytes.Buffer
-
+	duration, _ := time.ParseDuration(rule.Interval) //scroll interval
 	log.Println("Rule Run: " + rule.Name)
 
 	query := map[string]interface{}{
@@ -92,6 +91,8 @@ func search(wg *sync.WaitGroup, rule Rule) {
 		es7.Search.WithBody(&buf),
 		es7.Search.WithTrackTotalHits(true),
 		es7.Search.WithPretty(),
+		es7.Search.WithScroll(duration),
+		es7.Search.WithSize(conf.RequestSize),
 	)
 	if err != nil {
 		log.Fatalf("Error getting response: %s", err)
@@ -122,16 +123,14 @@ func search(wg *sync.WaitGroup, rule Rule) {
 		int(r["took"].(float64)),
 	)
 	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
+		alert.SendAlert(rule.Alert, hit.(map[string]interface{}))
 	}
-
 	log.Println(strings.Repeat("=", 37))
-
 }
 
 func searchJobStartWrapper(rule Rule) {
 	wg.Add(1)
-	search(&wg, rule)
+	go search(&wg, rule)
 }
 
 func main() {
@@ -144,7 +143,7 @@ func main() {
 	}
 	rules := readRulesFile(conf.RulesPath)
 	for i := 0; i < len(rules.Rules); i++ {
-		ctab.MustAddJob("*/"+string(rules.Rules[i].Interval.Minutes)+" */"+string(rules.Rules[i].Interval.Hours)+" * * *", searchJobStartWrapper, rules.Rules[i])
+		ctab.MustAddJob("*/1 * * * *", searchJobStartWrapper, rules.Rules[i])
 	}
 	wg.Wait()
 	<-c
